@@ -83,7 +83,7 @@ function SignUp() {
                                 id='password'
                                 value={password}
                                 onChange={onChange}
-                                minLength='10'
+                                minLength='6'
                                 required
                             />
 
