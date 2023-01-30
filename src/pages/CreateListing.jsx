@@ -84,6 +84,11 @@ function CreateListing() {
             return
         }
 
+        if (!latlng) {
+            toast.error('Click and drag the pin on location map')
+            return
+        }
+
         let geolocation = {}
         geolocation.lat = latlng.lat
         geolocation.lng = latlng.lng
