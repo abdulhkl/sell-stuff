@@ -8,6 +8,7 @@ import {
     orderBy,
     limit,
     startAfter,
+    getCountFromServer
 } from 'firebase/firestore'
 import { db } from '../firebase.config'
 import { toast } from 'react-hot-toast'
@@ -18,8 +19,13 @@ function Category() {
     const [listings, setListings] = useState(null)
     const [loading, setLoading] = useState(true)
     const [lastFetchedListing, setLastFetchedListing] = useState(null)
+    const [showLoadMore, setshowLoadMore] = useState(false)
+
 
     const params = useParams()
+
+    let count = 0;
+    let totalSize;
 
     useEffect(() => {
         const fetchListings = async () => {
@@ -34,12 +40,26 @@ function Category() {
                     orderBy('timestamp', 'desc'),
                     limit(5)
                 )
+                const qCount = query(
+                    listingsRef,
+                    where('type', '==', params.categoryName),
+                    orderBy('timestamp', 'desc')
+                )
 
                 // Execute query
                 const querySnap = await getDocs(q)
+                const querySnapCount = await getCountFromServer(qCount)
+                count += 5
+                totalSize = querySnapCount.data().count
 
                 const lastVisible = querySnap.docs[querySnap.docs.length - 1]
                 setLastFetchedListing(lastVisible)
+
+                if(count <  totalSize){
+                    setshowLoadMore(true)
+                }
+
+                console.log(count, totalSize)
 
                 const listings = []
 
@@ -80,6 +100,12 @@ function Category() {
 
             const lastVisible = querySnap.docs[querySnap.docs.length - 1]
             setLastFetchedListing(lastVisible)
+
+            if(count <  totalSize){
+                setshowLoadMore(true)
+            } else {
+                setshowLoadMore(false)
+            }
 
             const listings = []
 
@@ -127,7 +153,7 @@ function Category() {
 
                     <br />
                     <br />
-                    {lastFetchedListing && (
+                    {lastFetchedListing && showLoadMore && (
                         <p className='loadMore' onClick={onFetchMoreListings}>
                             Load More
                         </p>

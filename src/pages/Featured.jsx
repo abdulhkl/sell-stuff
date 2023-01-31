@@ -8,6 +8,7 @@ import {
     orderBy,
     limit,
     startAfter,
+    getCountFromServer
 } from 'firebase/firestore'
 import { db } from '../firebase.config'
 import { toast } from 'react-hot-toast'
@@ -18,8 +19,12 @@ function Featured() {
     const [listings, setListings] = useState(null)
     const [loading, setLoading] = useState(true)
     const [lastFetchedListing, setLastFetchedListing] = useState(null)
+    const [showLoadMore, setshowLoadMore] = useState(false)
 
     const params = useParams()
+
+    let count = 0;
+    let totalSize;
 
     useEffect(() => {
         const fetchListings = async () => {
@@ -34,12 +39,24 @@ function Featured() {
                     orderBy('timestamp', 'desc'),
                     limit(5)
                 )
+                const qCount = query(
+                    listingsRef,
+                    where('featured', '==', true),
+                    orderBy('timestamp', 'desc')
+                )
+
 
                 // Execute query
                 const querySnap = await getDocs(q)
-
+                const querySnapCount = await getCountFromServer(qCount)
+                count += 5
+                totalSize = querySnapCount.data().count
+                
                 const lastVisible = querySnap.docs[querySnap.docs.length - 1]
                 setLastFetchedListing(lastVisible)
+                if(count <  totalSize){
+                    setshowLoadMore(true)
+                }
 
                 const listings = []
 
@@ -77,9 +94,15 @@ function Featured() {
 
             // Execute query
             const querySnap = await getDocs(q)
-
+            count += 5
             const lastVisible = querySnap.docs[querySnap.docs.length - 1]
             setLastFetchedListing(lastVisible)
+            
+            if(count <  totalSize){
+                setshowLoadMore(true)
+            } else {
+                setshowLoadMore(false)
+            }
 
             const listings = []
 
@@ -89,6 +112,8 @@ function Featured() {
                     data: doc.data(),
                 })
             })
+            
+            
 
             setListings((prevState) => [...prevState, ...listings])
             setLoading(false)
@@ -123,7 +148,7 @@ function Featured() {
 
                     <br />
                     <br />
-                    {lastFetchedListing && (
+                    {lastFetchedListing && showLoadMore && (
                         <p className='loadMore' onClick={onFetchMoreListings}>
                             Load More
                         </p>
